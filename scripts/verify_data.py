@@ -74,18 +74,18 @@ report.register(
 )
 
 report.register(
-    "Income tax data (Filosofi 2019), municipalities",
-    "https://www.insee.fr/fr/statistiques/fichier/6036907/indic-struct-distrib-revenu-2019-COMMUNES.zip"
+    "Income tax data (Filosofi 2021), municipalities",
+    "https://www.insee.fr/fr/statistiques/fichier/7756855/indic-struct-distrib-revenu-2021-COMMUNES_XLSX.zip"
 )
 
 report.register(
-    "Income tax data (Filosofi 2019), administrative",
-    "https://www.insee.fr/fr/statistiques/fichier/6036907/indic-struct-distrib-revenu-2019-SUPRA.zip"
+    "Income tax data (Filosofi 2021), administrative",
+    "https://www.insee.fr/fr/statistiques/fichier/7756855/indic-struct-distrib-revenu-2021-SUPRA_XLSX.zip"
 )
 
 report.register(
-    "Service and facility census (BPE 2021)",
-    "https://www.insee.fr/fr/statistiques/fichier/3568638/bpe21_ensemble_xy_csv.zip"
+    "Service and facility census (BPE 2024)",
+    "https://www.insee.fr/fr/statistiques/fichier/8217525/BPE24.zip"
 )
 
 entd_sources = [
@@ -115,17 +115,17 @@ report.register(
 
 report.register(
     "Enterprise census (SIRENE), Etablissement",
-    "https://files.data.gouv.fr/insee-sirene/StockEtablissement_utf8.zip"
+    "https://object.files.data.gouv.fr/data-pipeline-open/siren/stock/StockEtablissement_utf8.parquet"
 )
 
 report.register(
     "Enterprise census (SIRENE), Unité Legale",
-    "https://files.data.gouv.fr/insee-sirene/StockUniteLegale_utf8.zip"
+    "https://object.files.data.gouv.fr/data-pipeline-open/siren/stock/StockUniteLegale_utf8.parquet"
 )
 
 report.register(
     "Enterprise census (SIRENE), Géolocalisé",
-    "https://files.data.gouv.fr/insee-sirene-geo/GeolocalisationEtablissement_Sirene_pour_etudes_statistiques_utf8.zip"
+    "https://object.files.data.gouv.fr/data-pipeline-open/siren/geoloc/GeolocalisationEtablissement_Sirene_pour_etudes_statistiques_utf8.parquet"
 )
 
 for department in (75, 77, 78, 91, 92, 93, 94, 95):

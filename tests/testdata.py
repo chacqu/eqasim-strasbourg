@@ -2,10 +2,11 @@ import geopandas as gpd
 import pandas as pd
 import shapely.geometry as geo
 import numpy as np
-import os, shutil
-import py7zr, zipfile
+import os
+import shutil
+import py7zr
+import zipfile
 import glob
-import subprocess
 
 def create(output_path):
     """
@@ -49,6 +50,13 @@ def create(output_path):
     few municipalities are covered by IRIS:
     - 1B013, 1B014, 1B018, 1B019
     - 2D007, 2D008, 2D012, 2D013
+
+    The scenario cutter shape is a square of 5km x 5km, which is located in the center
+    of the two regions, containing part (25%) of the following municipalities :
+
+        1B025 | 2A021
+        -------------
+        1D005 | 2C001
     """
 
     BPE_OBSERVATIONS = 500
@@ -68,6 +76,8 @@ def create(output_path):
     DEPARTMENT_LENGTH = 25 * 1e3
     MUNICIPALITY_LENGTH = 5 * 1e3
     IRIS_LENGTH = 500
+
+    CUTTER_LENGTH = 5 * 1e3
 
     anchor_x = 638589
     anchor_y = 6861081
@@ -230,10 +240,10 @@ def create(output_path):
 
     columns = ["CAPACITE","DCIRIS", "LAMBERT_X", "LAMBERT_Y", "TYPEQU", "DEPCOM", "DEP"]
 
-    os.mkdir("%s/bpe_2023" % output_path)
+    os.mkdir("%s/bpe_2024" % output_path)
 
-    with zipfile.ZipFile("%s/bpe_2023/BPE23.zip" % output_path, "w") as archive:
-        with archive.open("BPE23.csv", "w") as f:
+    with zipfile.ZipFile("%s/bpe_2024/BPE24.zip" % output_path, "w") as archive:
+        with archive.open("BPE24.csv", "w") as f:
             df_selection[columns].to_csv(f,
                 sep = ";", index = False)
 
@@ -241,8 +251,8 @@ def create(output_path):
     # Required attributes: CODGEO, D115, ..., D915
     print("Creating FILOSOFI ...")
 
-    # Use the following data, taken from the Nantes municipality from the 2019 data set
-    filosofi_year = "19"
+    # Use the following data, taken from the Nantes municipality from the 2021 data set
+    filosofi_year = "21"
     income_data = {
         "househod_size": [
             {"name": "1_pers", "sheet": "TAILLEM_1", "col_pattern": "TME1", "data": [9820,13380,15730,18140,20060,22050,24710,28120,34150]},
@@ -266,15 +276,15 @@ def create(output_path):
     df_income_ensemble = df_income.copy()
 
     # the following data is not related to the `income_data` datasets
-    df_income_ensemble["D119"] = 9122.0
-    df_income_ensemble["D219"] = 11874.0
-    df_income_ensemble["D319"] = 14430.0
-    df_income_ensemble["D419"] = 16907.0
-    df_income_ensemble["Q219"] = 22240.0
-    df_income_ensemble["D619"] = 22827.0
-    df_income_ensemble["D719"] = 25699.0
-    df_income_ensemble["D819"] = 30094.0
-    df_income_ensemble["D919"] = 32303.0
+    df_income_ensemble["D121"] = 9122.0
+    df_income_ensemble["D221"] = 11874.0
+    df_income_ensemble["D321"] = 14430.0
+    df_income_ensemble["D421"] = 16907.0
+    df_income_ensemble["Q221"] = 22240.0
+    df_income_ensemble["D621"] = 22827.0
+    df_income_ensemble["D721"] = 25699.0
+    df_income_ensemble["D821"] = 30094.0
+    df_income_ensemble["D921"] = 32303.0
 
     # Deliberately remove some of them
     df_income_ensemble = df_income_ensemble[~df_income_ensemble["CODGEO"].isin([
@@ -305,10 +315,10 @@ def create(output_path):
         for i, column in enumerate(columns):
             value["df"][column] = value["data"][i]
 
-    os.mkdir("%s/filosofi_2019" % output_path)
+    os.mkdir("%s/filosofi_2021" % output_path)
 
-    with zipfile.ZipFile("%s/filosofi_2019/indic-struct-distrib-revenu-2019-COMMUNES.zip" % output_path, "w") as archive:
-        with archive.open("FILO2019_DISP_COM.xlsx", "w") as f:
+    with zipfile.ZipFile("%s/filosofi_2021/indic-struct-distrib-revenu-2021-COMMUNES_XLSX.zip" % output_path, "w") as archive:
+        with archive.open("FILO2021_DISP_COM.xlsx", "w") as f:
             with pd.ExcelWriter(f) as writer:  
                 df_income_ensemble.to_excel(
                     writer, sheet_name = "ENSEMBLE", startrow = 5, index = False
@@ -533,7 +543,8 @@ def create(output_path):
 
         iris = df["iris"].iloc[random.randint(len(df))]
         department = iris[:2]
-        if iris.endswith("0000"): iris = iris[:-4] + "XXXX"
+        if iris.endswith("0000"):
+            iris = iris[:-4] + "XXXX"
 
         if random.random_sample() < 0.1: # For some, commune is not known
             iris = "ZZZZZZZZZ"
@@ -694,13 +705,13 @@ def create(output_path):
 
 
     os.mkdir("%s/sirene" % output_path)
-    df_sirene.to_csv(output_path + "/sirene/StockEtablissement_utf8.zip", index = False, compression={'method': 'zip', 'archive_name': 'StockEtablissement_utf8.csv'})
+    df_sirene.to_parquet(output_path + "/sirene/StockEtablissement_utf8.parquet", index = False)
 
 
     df_sirene = df_sirene[["siren"]].copy()
     df_sirene["categorieJuridiqueUniteLegale"] = "1000"
 
-    df_sirene.to_csv(output_path + "/sirene/StockUniteLegale_utf8.zip", index = False, compression={'method': 'zip', 'archive_name': 'StockUniteLegale_utf8.csv'})
+    df_sirene.to_parquet(output_path + "/sirene/StockUniteLegale_utf8.parquet", index = False)
 
     # Data set: SIRENE GEOLOCATION
     print("Creating SIRENE GEOLOCATION...")
@@ -718,7 +729,7 @@ def create(output_path):
         "plg_code_commune":codes_com,
     })
     
-    df_sirene_geoloc.to_csv("%s/sirene/GeolocalisationEtablissement_Sirene_pour_etudes_statistiques_utf8.zip" % output_path, index = False, sep=";", compression={'method': 'zip', 'archive_name': 'GeolocalisationEtablissement_Sirene_pour_etudes_statistiques_utf8.csv'})
+    df_sirene_geoloc.to_parquet("%s/sirene/GeolocalisationEtablissement_Sirene_pour_etudes_statistiques_utf8.parquet" % output_path, index = False)
 
     # Data set: Urban type
     print("Creating urban type ...")
@@ -736,10 +747,25 @@ def create(output_path):
         with archive.open("UU2020_au_01-01-2023.xlsx", "w") as f:
             df_urban_type.to_excel(f, startrow = 5, sheet_name = "Composition_communale", index = False)
 
+
+    # set scenario cutter shape
+    print("Creating Cutter shape ...")
+    os.mkdir("%s/cutter" % output_path)
+
+    cutter_minx = anchor_x + REGION_LENGTH - CUTTER_LENGTH / 2
+    cutter_maxx = cutter_minx + CUTTER_LENGTH
+    cutter_miny = anchor_y - REGION_LENGTH / 2 - CUTTER_LENGTH / 2
+    cutter_maxy = cutter_miny + CUTTER_LENGTH
+    gpd.GeoDataFrame(
+        geometry = [geo.box(
+            cutter_minx, cutter_miny, cutter_maxx, cutter_maxy
+        )],
+        crs = "EPSG:2154"
+    ).to_file("%s/cutter/cutter.geojson" % output_path)
+
     # Data set: OSM
     # We add add a road grid of 500m
     print("Creating OSM ...")
-    import itertools
 
     osm = []
     osm.append('<?xml version="1.0" encoding="UTF-8"?>')
@@ -764,7 +790,7 @@ def create(output_path):
                 links.append([node_index, node_index + 1])
 
             if i < lengthx - 1:
-                links.append([node_index, node_index + lengthx])
+                links.append([node_index, node_index + 1])
 
             node_index += 1
 
@@ -772,16 +798,53 @@ def create(output_path):
     df_nodes = df_nodes.to_crs("EPSG:4326")
 
     for row in df_nodes.itertuples():
-        osm.append('<node id="%d" lat="%f" lon="%f" version="3" timestamp="2010-12-05T17:00:00" />' % (
+        osm.append('<node id="%d" lat="%f" lon="%f" version="3" timestamp="2010-12-05T17:00:00Z" />' % (
             row[1], row[2].y, row[2].x
         ))
 
-    for index, link in enumerate(links):
-        osm.append('<way id="%d" version="3" timestamp="2010-12-05T17:00:00">' % (index + 1))
+    for building_index, link in enumerate(links):
+        osm.append('<way id="%d" version="3" timestamp="2010-12-05T17:00:00Z">' % (building_index + 1))
         osm.append('<nd ref="%d" />' % link[0])
         osm.append('<nd ref="%d" />' % link[1])
         osm.append('<tag k="highway" v="primary" />')
         osm.append('</way>')
+
+
+    # Add a small square building around the center of the cutter region
+    # This is to test the noise part
+
+    building_size = 50
+    building_offset_x = 50
+    building_x = building_offset_x + cutter_minx + (cutter_maxx - cutter_minx) / 2 - building_size / 2  # Centered, 10m wide
+    building_y = cutter_miny + (cutter_maxy - cutter_miny) / 2 - building_size / 2  # Centered, 10m high
+
+    building_polygon = geo.Polygon([
+        (building_x, building_y), 
+        (building_x + building_size, building_y), 
+        (building_x + building_size, building_y + building_size), 
+        (building_x, building_y + building_size)
+    ])
+
+    df_building = gpd.GeoSeries([building_polygon], crs="EPSG:2154")
+    df_building.to_file("%s/building.geojson" % output_path)
+    building_polygon = df_building.to_crs("EPSG:4326").iloc[0]
+
+    polygon_nodes_id = []
+    for i, coord in enumerate(building_polygon.exterior.coords[:-1]):
+        node_id = node_index + i
+        osm.append('<node id="%d" lat="%f" lon="%f" version="3" timestamp="2010-12-05T17:00:00Z" />' % (
+            node_id, coord[1], coord[0]
+        ))
+        polygon_nodes_id.append(node_id)
+    polygon_nodes_id.append(polygon_nodes_id[0])  # Close the polygon
+
+    building_index += 1
+    osm.append('<way id="%d" version="3" timestamp="2010-12-05T17:00:00Z">' % (building_index + 1) )
+    for node_id in polygon_nodes_id:
+        osm.append('<nd ref="%d" />' % node_id)
+    osm.append('<tag k="building" v="yes" />')
+    osm.append('</way>')
+    node_index += len(building_polygon.exterior.coords) - 1
 
     osm.append('</osm>')
 
@@ -790,14 +853,10 @@ def create(output_path):
     with gzip.open("%s/osm_idf/ile-de-france-220101.osm.gz" % output_path, "wb+") as f:
         f.write(bytes("\n".join(osm), "utf-8"))
 
-
-    import subprocess
-
-    subprocess.check_call([
-        shutil.which("osmosis"), "--read-xml", "%s/osm_idf/ile-de-france-220101.osm.gz" % output_path,
-        "--write-pbf", "%s/osm_idf/ile-de-france-220101.osm.pbf" % output_path
-    ])
-
+    import osmium
+    with osmium.SimpleWriter("{}/osm_idf/ile-de-france-220101.osm.pbf".format(output_path)) as writer:
+        for item in osmium.FileProcessor("{}/osm_idf/ile-de-france-220101.osm.gz".format(output_path)):
+            writer.add(item)
 
     # Data set: GTFS
     print("Creating GTFS ...")
